@@ -87,7 +87,8 @@ def post_creator(
     bank_account_number: int = Form(...),
     ifsc: str = Form(...),
     account_holder_name: str = Form(...),
-    phone_number: int = Form(...,min_length=10),
+    phone_number: int = Form(...),
+    token: str = Depends(JWTBearer()),
 ):
     creator_data = CreatorsPaymentSchema(
         creator_name=creator_name,
@@ -101,8 +102,8 @@ def post_creator(
     creators_collection.insert_one(dict(creator_data))
     return {"message":"Creators Details Created Successfully"}
 
-@app.get("/creators", tags=['GET Data'])
-def get_creators(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000)):
+@app.get("/creators",dependencies=[Depends(JWTBearer())], tags=['GET Data'])
+def get_creators(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000),token: str = Depends(JWTBearer()),):
     creators = list(creators_collection.find().skip(skip).limit(limit))
     valid_creators = [
         inv
@@ -122,7 +123,7 @@ def get_creators(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=10
 
     return creators_schema
 
-@app.post("/payment-details", tags=['Payment Module'])
+@app.post("/payment-details",dependencies=[Depends(JWTBearer())], tags=['Payment Module'])
 def payment_details(
     ticket_id: str = Form(...),
     creator_name: str = Form(...),
@@ -130,6 +131,7 @@ def payment_details(
     phone_number:int = Form(...),
     transaction_mode: TransactionMode = Form(...),
     transaction_status: TransactionStatus = Form(...),
+    token: str = Depends(JWTBearer()),
 ):
     # Check if a document with the same ticket_id already exists
     existing_payment = creators_payment_collection.find_one({"ticket_id": ticket_id})
@@ -162,8 +164,8 @@ def payment_details(
     # Your logic for handling payment_data goes here
     creators_payment_collection.insert_one(dict(payment_data))
     return {"message": "Payment details created successfully"}
-@app.get("/payment-details", tags=['Payment Module'])
-def get_creators_payment(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000)):
+@app.get("/payment-details", dependencies=[Depends(JWTBearer())],tags=['Payment Module'])
+def get_creators_payment(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000),token: str = Depends(JWTBearer()),):
     creators_payment = list(creators_payment_collection.find().skip(skip).limit(limit))
     valid_creators = [
         inv
@@ -180,9 +182,10 @@ def get_creators_payment(skip: int = Query(0, ge=0), limit: int = Query(100, ge=
 
     return creators_schema
 
-@app.get("/creators-payment/search", tags=['Search Creators Payment'])
+@app.get("/creators-payment/search", dependencies=[Depends(JWTBearer())],tags=['Search Creators Payment'])
 def search_creators_payment(
     ticket_id: str = Query(..., title="Ticket ID", description="Enter the ticket ID to search"),
+    token: str = Depends(JWTBearer()),
 ):
     # Perform the search based on the provided ticket_id
     creators_payment = list(creators_payment_collection.find({"ticket_id": ticket_id}))
@@ -203,11 +206,42 @@ def search_creators_payment(
 
     return creators_schema
 
-@app.get("/investors",response_model=List[InvestorSchema],tags=['GET Data'])
+@app.get('/all-creators-payment-search', dependencies=[Depends(JWTBearer())],tags=['Search Creators Payment'])
+def all_creators_payment_search(
+     creator_name: str = Query(None, title="Creator Name", description="Enter the Creator Name to search"),
+     phone_number: int = Query(None, title="Phone Number", description="Enter the Phone Number to search"),
+     token: str = Depends(JWTBearer()),
+):
+    # Define a filter based on the provided parameters
+    filter_params = {}
+    if creator_name:
+        filter_params["creator_name"] = creator_name
+    if phone_number:
+        filter_params["phone_number"] = phone_number
+
+    # Fetch documents based on the filter
+    creators_payment = list(creators_payment_collection.find(filter_params))
+
+    # Validate and convert to Pydantic schema
+    valid_creators = [
+        inv
+        for inv in creators_payment
+        if all(key in inv for key in PaymentDetailSchema.__annotations__.keys())
+    ]
+    try:
+        creators_schema = [PaymentDetailSchema(**creator) for creator in valid_creators]
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"errors": e.errors(), "message": "Validation Error"}
+        )
+
+    return creators_schema
+@app.get("/investors",dependencies=[Depends(JWTBearer())],response_model=List[InvestorSchema],tags=['GET Data'])
 def get_investors(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    # token: str = Depends(JWTBearer()),
+    token: str = Depends(JWTBearer()),
 ):
     investors = list(investor_collection.find().skip(skip).limit(limit))
 
