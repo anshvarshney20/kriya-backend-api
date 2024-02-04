@@ -12,6 +12,8 @@ h11==0.14.0
 idna==3.6
 packaging==23.2
 passlib==1.7.4
+payments==0.2
+phonenumbers==8.13.29
 psycopg2-binary==2.9.9
 pydantic==2.5.3
 pydantic_core==2.14.6
