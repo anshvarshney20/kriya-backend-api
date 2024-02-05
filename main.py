@@ -2,7 +2,7 @@ from datetime import datetime
 from fastapi import FastAPI, Body, HTTPException, Depends, Query,Form,File,UploadFile,status
 from auth.models import UserRegisterSchema, UserLoginSchema, InvestorSchema,CreatorsPaymentSchema,PaymentDetailSchema
 from auth.jwt_handler import signJWT
-from auth.database import users_collection, investor_collection, creators_collection,creators_payment_collection
+from auth.database import users_collection, investor_collection, creators_collection,creators_payment_collection,creators_signup_collection
 from passlib.context import CryptContext
 from typing import List
 from enum import Enum
@@ -295,7 +295,62 @@ def user_login(
     else:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
+@app.post("/creator/signup", tags=["Creators Signup"])
+def creator_signup(
+    fullname: str = Form(...),
+    email: str = Form(...),
+    phone_number: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    gender: str = Form(...),
+    expertise: str = Form(...),
+    experience_percentage: float = Form(...),
+    language: str = Form(...),
+    availability: str = Form(...),
+    education: str = Form(...),
+    videochat_per_minute: float = Form(...),
+    char_per_minute: float = Form(...),
+):
+    # Check if the user with the provided email already exists
+    if user_exists(email):
+        raise HTTPException(
+            status_code=400, detail="User with this email already exists"
+        )
 
+    # Check if password and confirm_password match
+    if password != confirm_password:
+        raise HTTPException(
+            status_code=400, detail="Password and confirm password do not match"
+        )
+
+    # Hash the password
+    hashed_password = hash_password(password)
+
+    # Create a dictionary with creator data
+    creator_data = {
+        "fullname": fullname,
+        "email": email,
+        "phone_number": phone_number,
+        "hashed_password": hashed_password,
+        "gender": gender,
+        "expertise": expertise,
+        "experience_percentage": experience_percentage,
+        "language": language,
+        "availability": availability,
+        "education": education,
+        "videochat_per_minute": videochat_per_minute,
+        "char_per_minute": char_per_minute,
+    }
+
+    # Insert the creator data into the database
+    creators_signup_collection.insert_one(creator_data)
+
+    # Optionally, you may want to generate a JWT token for the creator
+    jwt_token = signJWT(email)
+
+    return JSONResponse(
+        content={"message": "Creator created successfully", "token": jwt_token}
+    )
 # if __name__ == "__main__":
 #     import uvicorn
 #     uvicorn.run(app, host="0.0.0.0", port=8000)

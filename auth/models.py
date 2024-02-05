@@ -18,6 +18,8 @@ class UserRegisterSchema(BaseModel):
     fullname: str = Field(default=None)
     email: str = Field(default=None)
     password: str = Field(default=None)
+
+
 class CreatorsPaymentSchema(BaseModel):
     creator_name: str = Field(...)
     gender: str = Field(...)
