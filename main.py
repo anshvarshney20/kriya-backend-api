@@ -32,3 +32,20 @@ app.add_middleware(
 # if __name__ == "__main__":
 #     import uvicorn
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# from fastapi import FastAPI
+# from pymongo import MongoClient
+#
+# app = FastAPI()
+#
+# # Connect to MongoDB
+# client = MongoClient("mongodb+srv://doadmin:kGnA514V3762l9Wr@db-mongodb-nyc3-27233-c025f978.mongo.ondigitalocean.com/admin?tls=true&authSource=admin&replicaSet=db-mongodb-nyc3-27233")
+# db = client["Kriya_DB"]
+# collection = db["users"]
+#
+# @app.get("/")
+# async def read_root():
+#     # Fetch some data from MongoDB
+#     data = collection.find_one()
+#
+#     return {"message": "MongoDB connected successfully", "data": data}

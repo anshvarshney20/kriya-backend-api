@@ -244,16 +244,18 @@ async def get_investors(
     return investors_schema
 
 
-@router.post("/user/signup", tags=["Admin Authentication"])
+@router.post("/user/signup", dependencies=[Depends(JWTBearer())],tags=["Admin Authentication"])
 async def create_user(
     fullname: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
+    token: str = Depends(JWTBearer()),
+
 ):
-    if user_exists(email):
-        raise HTTPException(
-            status_code=400, detail="User with this email already exists"
-        )
+    # if user_exists(email):
+    #     raise HTTPException(
+    #         status_code=400, detail="User with this email already exists"
+    #     )
 
     hashed_password = hash_password(password)
 
