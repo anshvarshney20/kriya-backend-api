@@ -244,7 +244,9 @@ async def get_investors(
     return investors_schema
 
 
-@router.post("/user/signup", dependencies=[Depends(JWTBearer())],tags=["Admin Authentication"])
+@router.post("/user/signup",
+             dependencies=[Depends(JWTBearer())],
+             tags=["Admin Authentication"])
 async def create_user(
     fullname: str = Form(...),
     email: str = Form(...),
