@@ -1,1 +1,1 @@
-uvicorn main:app --host=0.0.0.0 --port=$PORT 1000
+web: gunicorn --config gunicorn_config.py app:app
