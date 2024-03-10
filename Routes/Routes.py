@@ -306,10 +306,6 @@ async def creator_signup(
 
 ):
     # Check if the user with the provided email already exists
-    if user_exists(email):
-        raise HTTPException(
-            status_code=400, detail="User with this email already exists"
-        )
 
     # Check if password and confirm_password match
     if password != confirm_password:
