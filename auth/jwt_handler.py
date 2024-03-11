@@ -17,14 +17,15 @@ def token_response(token: str):
 
 # function used for signing the JWT string
 def signJWT(user_id: str) -> Dict[str, str]:
+    # Adding 24 hours' worth of seconds (24 * 60 * 60)
+    expiration_time = time.time() + (24 * 60 * 60)
     payload = {
         "user_id": user_id,
-        "expires": time.time() + 600
+        "expires": expiration_time
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
     return token_response(token)
-
 
 def decodeJWT(token: str) -> dict:
     try:

@@ -12,7 +12,7 @@ from fastapi import APIRouter
 from auth.jwt_bearer import JWTBearer
 from pydantic import ValidationError,BaseModel
 from fastapi.responses import JSONResponse
-
+import logging
 router = APIRouter()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -27,6 +27,9 @@ class TransactionStatus(str, Enum):
     success = "Success"
     pending = "Pending"
     failed = "Failed"
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 async def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -257,18 +260,17 @@ async def create_user(
     )
 
 
-@router.post("/user/login", tags=["Admin Authentication"])
-async def user_login(
-    email: str = Form(...),
-    password: str = Form(...),
-):
-    user_data = users_collection.find_one({"email": email})
 
-    if user_data and verify_password(password, user_data["hashed_password"]):
-        return signJWT(email)
+
+# Your existing function to verify user login
+@router.post("/user/login", tags=["Admin Authentication"])
+async def user_login(login_request: LoginRequest):
+    user_data = users_collection.find_one({"email": login_request.email})
+
+    if user_data and verify_password(login_request.password, user_data["hashed_password"]):
+        return signJWT(login_request.email)
     else:
         raise HTTPException(status_code=401, detail="Invalid email or password")
-
 
 @router.post("/user-profile/signup", tags=["Creators Signup"])
 async def user_profile_signup(user_profile: UserProfile):
@@ -281,6 +283,26 @@ async def user_profile_signup(user_profile: UserProfile):
 
     return {"message": "User profile created successfully"}\
 
+@router.get("/creators/data",dependencies=[Depends(JWTBearer())], tags=['GET Data'])
+async def user_profile_data(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000),token: str = Depends(JWTBearer()),):
+    creators = list(users_profile_collection.find().skip(skip).limit(limit))
+    valid_creators = [
+        inv
+        for inv in creators
+        if all(key in inv for key in UserProfile.__annotations__.keys())
+    ]
+
+    creators_schema: List[UserProfile] = []
+
+    try:
+        creators_schema = [UserProfile(**creator) for creator in valid_creators]
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"errors": e.errors(), "message": "Validation Error"}
+        )
+
+    return creators_schema
 @router.post("/creator/signup", tags=["Creators Signup"])
 async def creator_signup(
     firstName: str = Form(...),

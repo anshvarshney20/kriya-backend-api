@@ -60,5 +60,5 @@ class PaymentDetailSchema(BaseModel):
         arbitrary_types_allowed = True
 
 class UserLoginSchema(BaseModel):
-    email:EmailStr= Field(default=None)
-    password:str = Field(default=None)
+    email:EmailStr= str
+    password:str = str
