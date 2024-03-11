@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
+from typing import Optional
 
 class InvestorSchema(BaseModel):
     first_name: str = Field(...)
@@ -13,7 +14,20 @@ class InvestorSchema(BaseModel):
     email:str = Field(...)
     phonenumber:int = Field(...)
 
-
+class UserProfile(BaseModel):
+    firstName: str
+    lastName: str
+    profileName: str
+    phoneNumber: str
+    email: str
+    age: str
+    gender: str
+    instagram: Optional[str] = None
+    youtube: Optional[str] = None
+    facebook: Optional[str] = None
+    linkedin: Optional[str] = None
+    twitter: Optional[str] = None
+    category: str
 class UserRegisterSchema(BaseModel):
     fullname: str = Field(default=None)
     email: str = Field(default=None)
@@ -21,13 +35,17 @@ class UserRegisterSchema(BaseModel):
 
 
 class CreatorsPaymentSchema(BaseModel):
-    creator_name: str = Field(...)
-    gender: str = Field(...)
-    upi: str = Field(...)
-    bank_account_number: int = Field(...)
-    ifsc: str = Field(...)
-    account_holder_name: str = Field(...)
-    phone_number: int = Field(...)
+    upi: str
+    bank_account_number: int
+    ifsc: str
+    account_holder_name: str
+    phone_number: int
+    bank_name : str
+    pancard_number : str
+    adhaar_number : int
+    # pancard_image:
+    # adhaar_card_image:
+    # passbook_image:int
 
 class PaymentDetailSchema(BaseModel):
 

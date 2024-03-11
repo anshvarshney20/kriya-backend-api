@@ -1,8 +1,9 @@
 from datetime import datetime
 from fastapi import FastAPI, Body, HTTPException, Depends, Query,Form,File,UploadFile,status
-from auth.models import UserRegisterSchema, UserLoginSchema, InvestorSchema,CreatorsPaymentSchema,PaymentDetailSchema
+from auth.models import UserRegisterSchema, UserLoginSchema, InvestorSchema, CreatorsPaymentSchema, PaymentDetailSchema, \
+    UserProfile
 from auth.jwt_handler import signJWT
-from auth.database import users_collection, investor_collection, creators_collection,creators_payment_collection,creators_signup_collection
+from auth.database import users_collection, investor_collection, creators_collection,creators_payment_collection,creators_signup_collection,users_profile_collection
 from passlib.context import CryptContext
 from typing import List
 from enum import Enum
@@ -67,29 +68,10 @@ async def post_investor(
 
     return {"message": "Investor created successfully"}
 
-@router.post('/creators/details',dependencies=[Depends(JWTBearer())], tags=["POST Data"])
-async def post_creator(
-    creator_name: str = Form(...),
-    gender: str = Form(...),
-    upi: str = Form(...),
-    bank_account_number: int = Form(...),
-    ifsc: str = Form(...),
-    account_holder_name: str = Form(...),
-    phone_number: int = Form(...),
-    token: str = Depends(JWTBearer()),
-):
-    creator_data = CreatorsPaymentSchema(
-        creator_name=creator_name,
-        gender=gender,
-        upi=upi,
-        bank_account_number=bank_account_number,
-        ifsc=ifsc,
-        account_holder_name=account_holder_name,
-        phone_number=phone_number
-    )
-    creators_collection.insert_one(dict(creator_data))
-    return {"message":"Creators Details Created Successfully"}
-
+@router.post('/creators/details', tags=["POST Data"])
+async def post_creator(creator_data: CreatorsPaymentSchema):
+    creators_collection.insert_one(creator_data.dict())
+    return {"message": "Creators Details Created Successfully"}
 @router.get("/creators",dependencies=[Depends(JWTBearer())], tags=['GET Data'])
 async def get_creators(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000),token: str = Depends(JWTBearer()),):
     creators = list(creators_collection.find().skip(skip).limit(limit))
@@ -287,9 +269,22 @@ async def user_login(
     else:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+
+@router.post("/user-profile/signup", tags=["Creators Signup"])
+async def user_profile_signup(user_profile: UserProfile):
+    # Check if the user with the provided email already exists
+    if users_profile_collection.find_one({"email": user_profile.email}):
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Insert the user profile data into the MongoDB collection
+    users_profile_collection.insert_one(user_profile.dict())
+
+    return {"message": "User profile created successfully"}\
+
 @router.post("/creator/signup", tags=["Creators Signup"])
 async def creator_signup(
-    fullname: str = Form(...),
+    firstName: str = Form(...),
+    lastName: str = Form(...),
     email: str = Form(...),
     phone_number: str = Form(...),
     password: str = Form(...),
@@ -338,8 +333,8 @@ async def creator_signup(
     creators_signup_collection.insert_one(creator_data)
 
     # Optionally, you may want to generate a JWT token for the creator
-    jwt_token = signJWT(email)
 
     return JSONResponse(
         content={"message": "Creator created successfully", "token": jwt_token}
     )
+
