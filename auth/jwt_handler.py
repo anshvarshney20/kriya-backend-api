@@ -30,6 +30,16 @@ def signJWT(user_id: str) -> Dict[str, str]:
 def decodeJWT(token: str) -> dict:
     try:
         decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return decoded_token if decoded_token["expires"] >= time.time() else None
-    except:
-        return {}
+        if decoded_token["expires"] >= time.time():
+            return decoded_token
+        else:
+            raise jwt.ExpiredSignatureError("Token has expired")
+    except jwt.ExpiredSignatureError:
+        # Handle token expiration error
+        raise
+    except jwt.InvalidTokenError:
+        # Handle other token validation errors
+        raise
+    except Exception as e:
+        # Handle unexpected errors
+        raise RuntimeError("Failed to decode JWT: {}".format(e))

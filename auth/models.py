@@ -1,7 +1,7 @@
-from pydantic import BaseModel, Field, EmailStr
-from datetime import datetime
 from typing import Optional
-
+from pydantic import BaseModel, Field, EmailStr
+from fastapi import UploadFile
+import datetime
 class InvestorSchema(BaseModel):
     first_name: str = Field(...)
     last_name: str = Field(...)
@@ -28,6 +28,17 @@ class UserProfile(BaseModel):
     linkedin: Optional[str] = None
     twitter: Optional[str] = None
     category: str
+    upi: str
+    bank_account_number: int
+    ifsc: str
+    account_holder_name: str
+    bank_name : str
+    pancard_number : str
+    adhaar_number : int
+    panCardImage: Optional[UploadFile] = None
+    aadharCardImage: Optional[UploadFile] = None
+    passbookImage: Optional[UploadFile] = None
+    
 class UserRegisterSchema(BaseModel):
     fullname: str = Field(default=None)
     email: str = Field(default=None)
@@ -54,7 +65,7 @@ class PaymentDetailSchema(BaseModel):
     phone_number:int=Field(...)
     amount:int=Field(...)
     transaction_mode:str=Field(...)
-    transaction_date: Field(default_factory=datetime.utcnow)
+    transaction_date: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     transaction_status:str=Field(...)
     class Config:
         arbitrary_types_allowed = True

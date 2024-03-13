@@ -1,8 +1,8 @@
 from datetime import datetime
 from fastapi import FastAPI, Body, HTTPException, Depends, Query,Form,File,UploadFile,status
-from auth.models import UserRegisterSchema, UserLoginSchema, InvestorSchema, CreatorsPaymentSchema, PaymentDetailSchema, \
-    UserProfile
+from auth.models import UserRegisterSchema, UserLoginSchema, InvestorSchema, CreatorsPaymentSchema, UserProfile,PaymentDetailSchema,UserLoginSchema
 from auth.jwt_handler import signJWT
+
 from auth.database import users_collection, investor_collection, creators_collection,creators_payment_collection,creators_signup_collection,users_profile_collection
 from passlib.context import CryptContext
 from typing import List
@@ -27,9 +27,6 @@ class TransactionStatus(str, Enum):
     success = "Success"
     pending = "Pending"
     failed = "Failed"
-class LoginRequest(BaseModel):
-    email: str
-    password: str
 
 async def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -75,6 +72,7 @@ async def post_investor(
 async def post_creator(creator_data: CreatorsPaymentSchema):
     creators_collection.insert_one(creator_data.dict())
     return {"message": "Creators Details Created Successfully"}
+
 @router.get("/creators",dependencies=[Depends(JWTBearer())], tags=['GET Data'])
 async def get_creators(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000),token: str = Depends(JWTBearer()),):
     creators = list(creators_collection.find().skip(skip).limit(limit))
@@ -264,9 +262,9 @@ async def create_user(
 
 # Your existing function to verify user login
 @router.post("/user/login", tags=["Admin Authentication"])
-async def user_login(login_request: LoginRequest):
+async def user_login(login_request: UserLoginSchema):
     user_data = users_collection.find_one({"email": login_request.email})
-
+    print("user_data",user_data)
     if user_data and verify_password(login_request.password, user_data["hashed_password"]):
         return signJWT(login_request.email)
     else:
@@ -303,7 +301,25 @@ async def user_profile_data(skip: int = Query(0, ge=0), limit: int = Query(100, 
         )
 
     return creators_schema
-@router.post("/creator/signup", tags=["Creators Signup"])
+
+@router.get("/creators/data/{profile_name}", dependencies=[Depends(JWTBearer())],tags=['GET Data'])
+async def user_profile_by_name(profile_name: str,    token: str = Depends(JWTBearer()),
+):
+    creator = users_profile_collection.find_one({"profileName": profile_name})
+    if creator:
+        try:
+            validated_creator = UserProfile(**creator)
+        except ValidationError as e:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"errors": e.errors(), "message": "Validation Error"}
+            )
+        return validated_creator
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": "Creator not found"}
+        )
 async def creator_signup(
     firstName: str = Form(...),
     lastName: str = Form(...),
