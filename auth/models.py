@@ -35,9 +35,9 @@ class UserProfile(BaseModel):
     bank_name : str
     pancard_number : str
     adhaar_number : int
-    panCardImage: Optional[UploadFile] = None
-    aadharCardImage: Optional[UploadFile] = None
-    passbookImage: Optional[UploadFile] = None
+    # panCardImage: Optional[UploadFile] = None
+    # aadharCardImage: Optional[UploadFile] = None
+    # passbookImage: Optional[UploadFile] = None
     
 class UserRegisterSchema(BaseModel):
     fullname: str = Field(default=None)
