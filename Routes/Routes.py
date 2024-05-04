@@ -375,4 +375,14 @@ async def creator_signup(
     return JSONResponse(
         content={"message": "Creator created successfully", "token": jwt_token}
     )
-
+@router.delete("/user-profile/{profile_name}", tags=["Creators Signup"])
+async def delete_user_profile(profile_name: str):
+    # Check if the user with the provided profile name exists
+    existing_user = users_profile_collection.find_one({"profileName": profile_name})
+    if existing_user:
+        # Delete the user profile from the MongoDB collection
+        users_profile_collection.delete_one({"profileName": profile_name})
+        return {"message": f"User profile '{profile_name}' deleted successfully"}
+    else:
+        # Return 404 Not Found if the user profile doesn't exist
+        raise HTTPException(status_code=404, detail=f"User profile '{profile_name}' not found")
